@@ -1,0 +1,52 @@
+/* Scoped reset — host Preflight / base styles still apply inside the card, so
+ * we re-state the element defaults the component relies on. Every selector uses
+ * `:where()` so specificity stays zero and the card's own rules always win. */
+
+:where(.kpi, .kpi-shell) {
+  &,
+  & :where(*, *::before, *::after) {
+    box-sizing: border-box;
+  }
+
+  & :where(dl, dt, dd) {
+    margin: 0;
+  }
+}
+
+:where(.kpi) {
+  & :where(h3, p, span, div, svg) {
+    margin: 0;
+    padding: 0;
+  }
+
+  & :where(button) {
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  & :where(svg) {
+    display: block;
+    overflow: visible;
+  }
+}
+
+/* Visually hidden but announced by assistive tech. Absolute so it is not a
+ * flex item and does not contribute to badge/action gaps. */
+.kpi-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}

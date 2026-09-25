@@ -1,0 +1,158 @@
+/* Motion: details open/close, chart entrances, value fade, loading pulse,
+   reduced-motion.
+
+   The three chart animations used to be `motion/react` transitions inside the
+   components. That library was this demo's only third-party dependency and
+   cost 39,966 B brotli — for a width, a rectangle and a line draw, all three of
+   which CSS does natively. It also meant each of them branched on
+   `useReducedMotion()` in JavaScript, where the rule for these islands is that
+   the stylesheet answers that question and the script never does. The
+   `prefers-reduced-motion` block at the foot of this file now covers all three
+   for free. */
+
+.kpi-details--animate {
+  & .kpi-details-panel {
+    transition:
+      block-size var(--kpi-details-duration-out) ease-in,
+      opacity var(--kpi-details-duration-out) ease-in,
+      visibility 0s linear var(--kpi-details-duration-out);
+  }
+
+  & .kpi-details-content {
+    transition:
+      opacity calc(var(--kpi-details-duration-out) / 2) ease-in,
+      transform var(--kpi-details-duration-out) ease-in;
+  }
+
+  &.is-open .kpi-details-panel {
+    transition:
+      block-size var(--kpi-details-duration-in) var(--kpi-details-ease),
+      opacity 120ms ease-out,
+      visibility 0s;
+  }
+
+  &.is-open .kpi-details-content {
+    transition:
+      opacity 200ms ease-out 60ms,
+      transform var(--kpi-details-duration-in) var(--kpi-details-ease);
+  }
+}
+
+/* --- Chart entrances ----------------------------------------------------- */
+
+/*
+ * The target bar fills from empty on first paint, and slides when the number
+ * changes underneath it.
+ *
+ * A transition alone cannot do the first half: there is no previous value to
+ * leave, so nothing interpolates on mount. The keyframe supplies that one, and
+ * because it declares only `from`, the browser takes the element's own computed
+ * size as the destination — no duplicate of the width in two places.
+ */
+.kpi-progress-fill {
+  transition: inline-size var(--kpi-duration-progress) ease-out;
+  animation: kpi-progress-fill var(--kpi-duration-progress) ease-out;
+}
+
+@keyframes kpi-progress-fill {
+  from {
+    inline-size: 0;
+  }
+}
+
+/*
+ * Sparkline bars rise from the baseline, each a beat after the one before it.
+ *
+ * `x`, `y`, `width` and `height` are CSS properties for SVG geometry, so the
+ * rise is a keyframe rather than a per-frame write from JavaScript. The
+ * baseline is the one literal here — `HEIGHT - CHART_VERTICAL_PADDING`, 40 − 4
+ * — because a keyframe cannot read it off the element the way `from`-only
+ * keyframes read a resting value.
+ *
+ * `backwards` holds the bar at zero through its stagger delay. Without it a bar
+ * waiting its turn is drawn at full height and then jumps back down to start.
+ */
+.kpi-chart rect {
+  transition:
+    height var(--kpi-duration-bar) ease-out,
+    y var(--kpi-duration-bar) ease-out;
+  animation: kpi-bar-rise var(--kpi-duration-bar) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: calc(var(--kpi-bar-index, 0) * var(--kpi-bar-stagger));
+}
+
+@keyframes kpi-bar-rise {
+  from {
+    height: 0;
+    y: 36px;
+  }
+}
+
+/*
+ * The sparkline draws itself.
+ *
+ * The polyline carries `pathLength="1"`, which renormalises its own length to
+ * one unit, so a dash of 1 is exactly the whole line whatever the data does to
+ * its real length. Offsetting that dash out of view and back is the standard
+ * line-draw, and it is what `pathLength: 0 → 1` was doing in the library.
+ */
+.kpi-chart polyline {
+  stroke-dasharray: 1;
+  animation: kpi-line-draw var(--kpi-duration-line) ease-in-out backwards;
+}
+
+@keyframes kpi-line-draw {
+  from {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* --- Everything else ----------------------------------------------------- */
+
+@keyframes kpi-fade-in {
+  from {
+    opacity: 0.5;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kpi-value-animate {
+  animation: kpi-fade-in var(--kpi-duration-slow) ease-out forwards;
+}
+
+.kpi--loading {
+  animation: kpi-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes kpi-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi,
+  .kpi *,
+  .kpi-shell,
+  .kpi-shell * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    /* Delays have to go too, not just durations. The sparkline bars stagger
+       with `animation-delay` and hold at zero height through it — that is what
+       `backwards` is for — so a bar whose duration was collapsed but whose
+       delay survived sat invisible at the baseline for its half-second and
+       then appeared. Caught in the browser: the thirtieth bar was still
+       `height: 0px` after load with reduced motion on. */
+    transition-delay: 0ms !important;
+    animation-delay: 0ms !important;
+  }
+}

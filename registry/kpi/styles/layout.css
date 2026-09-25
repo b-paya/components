@@ -1,0 +1,394 @@
+/* Layout, structure and static visuals for the KPI card and its details panel. */
+
+.kpi {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: var(--kpi-padding);
+  /* The card sizes its own contents by its width, not the viewport's: it may
+   * sit in a narrow column on a wide screen. */
+  container: kpi / inline-size;
+  overflow: hidden;
+  color: var(--kpi-foreground);
+  font-family: var(--kpi-font-sans);
+  background: var(--kpi-surface);
+  border: 1px solid var(--kpi-border);
+  border-radius: var(--kpi-radius);
+  backdrop-filter: blur(var(--kpi-blur));
+
+  /* `flat` keeps the muted default chart; `neutral` semantics get a brighter
+   * line so the chart stays readable when direction carries no judgement. */
+  &.kpi--tone-positive {
+    --kpi-trend-color: var(--kpi-trend-color-override, var(--kpi-success));
+    --kpi-chart-color: var(--kpi-chart-color-override, var(--kpi-success));
+  }
+
+  &.kpi--tone-negative {
+    --kpi-trend-color: var(--kpi-trend-color-override, var(--kpi-destructive));
+    --kpi-chart-color: var(--kpi-chart-color-override, var(--kpi-destructive));
+  }
+
+  &.kpi--tone-neutral {
+    --kpi-chart-color: var(--kpi-chart-color-override, var(--kpi-muted-foreground));
+  }
+}
+
+/* Host for the hover details overlay. Overflow stays visible so the panel can
+ * hang below the card without expanding document flow. */
+.kpi-shell {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  overflow: visible;
+  interpolate-size: allow-keywords;
+}
+
+.kpi-details {
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 0;
+  z-index: 20;
+  inline-size: 100%;
+  padding-block-start: 0.5rem;
+  pointer-events: none;
+
+  &.is-open {
+    pointer-events: auto;
+
+    & .kpi-details-panel {
+      block-size: auto;
+      opacity: 1;
+      visibility: visible;
+    }
+
+    & .kpi-details-content {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+.kpi-details-bridge {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 0.5rem;
+}
+
+/* Padding sits on the content wrapper so a padded panel can still collapse to
+ * block-size: 0. */
+.kpi-details-panel {
+  block-size: 0;
+  overflow: hidden;
+  color: var(--kpi-foreground);
+  font-family: var(--kpi-font-sans);
+  background: var(--kpi-surface);
+  border: 1px solid var(--kpi-border);
+  border-radius: var(--kpi-radius);
+  opacity: 0;
+  /* Closed means gone for the keyboard too: a link passed in `details` must not
+   * stay in the tab order behind an invisible panel. `motion.css` delays this
+   * until the closing animation has run. */
+  visibility: hidden;
+  backdrop-filter: blur(var(--kpi-blur));
+  box-shadow: 0 12px 32px color-mix(in oklab, var(--kpi-background) 55%, transparent);
+}
+
+.kpi-details-content {
+  padding: 0.875rem 1rem;
+  opacity: 0;
+  transform: translateY(-0.75rem);
+}
+
+.kpi-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.kpi-details-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: baseline;
+}
+
+.kpi-details-label {
+  margin: 0;
+  color: var(--kpi-muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.25;
+}
+
+.kpi-details-value {
+  margin: 0;
+  color: var(--kpi-foreground);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+  text-align: end;
+}
+
+/* --- Header --------------------------------------------------------------- */
+
+.kpi-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-block-end: 0.5rem;
+}
+
+/* The title keeps its local typeface even if a host styles headings directly. */
+.kpi-title {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--kpi-muted-foreground);
+  font-weight: 500;
+  font-size: 0.875rem;
+  font-family: var(--kpi-font-sans);
+  line-height: 1.25rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Actions stay visible on coarse pointers. On hover-capable devices they are
+ * revealed on hover / focus-within. */
+.kpi-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+
+  @media (hover: hover) {
+    opacity: 0;
+    transition: opacity var(--kpi-duration) ease;
+
+    .kpi:hover &,
+    .kpi:focus-within & {
+      opacity: 1;
+    }
+  }
+}
+
+/* --- Action button ------------------------------------------------------- */
+
+.kpi-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  color: var(--kpi-muted-foreground);
+  background: transparent;
+  background-clip: padding-box;
+  border: 1px solid transparent;
+  border-radius: var(--kpi-radius-md);
+  outline: none;
+  transition:
+    color var(--kpi-duration) ease,
+    background-color var(--kpi-duration) ease,
+    border-color var(--kpi-duration) ease,
+    transform var(--kpi-duration) ease;
+  user-select: none;
+
+  & > svg {
+    flex-shrink: 0;
+    inline-size: 0.75rem;
+    block-size: 0.75rem;
+    pointer-events: none;
+  }
+
+  &:hover {
+    color: var(--kpi-foreground);
+    background: color-mix(in oklab, var(--kpi-muted) 50%, transparent);
+  }
+
+  &:focus-visible {
+    /* Standard shadcn-style ring. A page may layer its own global focus
+     * effect over it; the card never depends on one. */
+    outline: 2px solid var(--kpi-ring);
+    outline-offset: 2px;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &.kpi-button--success {
+    color: var(--kpi-success);
+  }
+}
+
+/* --- Value + chart ------------------------------------------------------- */
+
+.kpi-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block-start: 0.25rem;
+}
+
+.kpi-value {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-inline-size: 0;
+  color: var(--kpi-foreground);
+  font-weight: 700;
+  font-size: 1.875rem;
+  font-family: var(--kpi-font-mono);
+  line-height: 1;
+  letter-spacing: -0.025em;
+
+  @container kpi (inline-size >= 20rem) {
+    font-size: 2.25rem;
+  }
+
+  & .kpi-value-part--notation,
+  & .kpi-value-part--unit {
+    color: var(--kpi-foreground);
+  }
+}
+
+.kpi-value-part--digits {
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-trend {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  font-size: 0.875rem;
+}
+
+.kpi-trend-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  color: var(--kpi-trend-color);
+  font-weight: 500;
+  font-family: var(--kpi-font-mono);
+  font-variant-numeric: tabular-nums;
+  background: var(--kpi-surface-muted);
+  border: 1px solid var(--kpi-border-subtle);
+  border-radius: var(--kpi-radius-sm);
+}
+
+.kpi-trend-comparison {
+  color: var(--kpi-muted-foreground);
+  font-size: 0.75rem;
+}
+
+.kpi-chart {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 8px;
+  z-index: 0;
+  display: none;
+  color: var(--kpi-chart-color);
+  opacity: 0.8;
+  transition: opacity var(--kpi-duration-slow) ease;
+  pointer-events: none;
+
+  .kpi:hover & {
+    opacity: 1;
+  }
+
+  @container kpi (inline-size >= 20rem) {
+    display: block;
+  }
+}
+
+/* --- Target footer ------------------------------------------------------- */
+
+.kpi-footer {
+  margin-block-start: 1.5rem;
+  padding-block-start: 1rem;
+  border-block-start: 1px solid var(--kpi-border-subtle);
+}
+
+/* Label left, figures right — and when the two do not fit on one line, the
+ * figures move to a line of their own rather than breaking in the middle.
+ * "420.0 km/s / 500.0 km/s" split across two lines reads as two numbers; the
+ * label can take a second line without changing what it says. */
+.kpi-footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.125rem 1rem;
+  margin-block-end: 0.375rem;
+  font-size: 0.75rem;
+}
+
+.kpi-footer-label {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  color: var(--kpi-muted-foreground);
+}
+
+.kpi-footer-value {
+  margin-inline-start: auto;
+  color: var(--kpi-muted-foreground);
+  font-family: var(--kpi-font-mono);
+  white-space: nowrap;
+}
+
+.kpi-progress {
+  inline-size: 100%;
+  block-size: 0.375rem;
+  overflow: hidden;
+  background: var(--kpi-muted);
+  border-radius: 9999px;
+}
+
+.kpi-progress-fill {
+  /* `--kpi-progress` is a unitless fraction written by the component; the bar
+     is sized from it rather than from an inline width so the stylesheet owns
+     both the resting size and how it gets there. `inline-size` and not a
+     `scaleX` transform: the bar is six pixels tall, so there is no layout cost
+     worth trading a logical property for, and this stays right in both writing
+     directions. */
+  inline-size: calc(var(--kpi-progress, 0) * 100%);
+  block-size: 100%;
+  background: var(--kpi-foreground);
+  opacity: 0.55;
+}
+
+/* --- Loading skeleton --------------------------------------------------- */
+
+.kpi--loading {
+  gap: 1rem;
+  min-block-size: 10rem;
+}
+
+.kpi-skeleton {
+  background: var(--kpi-muted);
+  border-radius: var(--kpi-radius-sm);
+
+  &.kpi-skeleton--title {
+    inline-size: 33%;
+    block-size: 1rem;
+  }
+
+  &.kpi-skeleton--value {
+    inline-size: 50%;
+    block-size: 2.5rem;
+  }
+
+  &.kpi-skeleton--footer {
+    inline-size: 25%;
+    block-size: 0.75rem;
+    margin-block-start: auto;
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "b-paya",
+  "homepage": "https://github.com/b-paya/components",
+  "items": [
+    {
+      "name": "kpi",
+      "type": "registry:block",
+      "title": "KPI card",
+      "description": "A card for one metric: value, trend, sparkline, progress to a target, and a details panel. Self-contained CSS, no dependency beyond React.",
+      "files": [
+        {
+          "path": "registry/kpi/internal/format-value.ts",
+          "type": "registry:file",
+          "target": "components/kpi/internal/format-value.ts"
+        },
+        {
+          "path": "registry/kpi/internal/icons.tsx",
+          "type": "registry:file",
+          "target": "components/kpi/internal/icons.tsx"
+        },
+        {
+          "path": "registry/kpi/internal/metrics.ts",
+          "type": "registry:file",
+          "target": "components/kpi/internal/metrics.ts"
+        },
+        {
+          "path": "registry/kpi/internal/sparkline-geometry.ts",
+          "type": "registry:file",
+          "target": "components/kpi/internal/sparkline-geometry.ts"
+        },
+        {
+          "path": "registry/kpi/internal/sparkline.tsx",
+          "type": "registry:file",
+          "target": "components/kpi/internal/sparkline.tsx"
+        },
+        {
+          "path": "registry/kpi/internal/value-parts.tsx",
+          "type": "registry:file",
+          "target": "components/kpi/internal/value-parts.tsx"
+        },
+        {
+          "path": "registry/kpi/kpi.tsx",
+          "type": "registry:file",
+          "target": "components/kpi/kpi.tsx"
+        },
+        {
+          "path": "registry/kpi/kpiRuntime.tsx",
+          "type": "registry:file",
+          "target": "components/kpi/kpiRuntime.tsx"
+        },
+        {
+          "path": "registry/kpi/styles/index.css",
+          "type": "registry:file",
+          "target": "components/kpi/styles/index.css"
+        },
+        {
+          "path": "registry/kpi/styles/layout.css",
+          "type": "registry:file",
+          "target": "components/kpi/styles/layout.css"
+        },
+        {
+          "path": "registry/kpi/styles/motion.css",
+          "type": "registry:file",
+          "target": "components/kpi/styles/motion.css"
+        },
+        {
+          "path": "registry/kpi/styles/reset.css",
+          "type": "registry:file",
+          "target": "components/kpi/styles/reset.css"
+        },
+        {
+          "path": "registry/kpi/styles/tokens.css",
+          "type": "registry:file",
+          "target": "components/kpi/styles/tokens.css"
+        }
+      ]
+    }
+  ]
+}

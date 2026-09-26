@@ -1,0 +1,121 @@
+/* All motion is CSS; reduced motion is handled once, at the end of this file. */
+
+.kpi-details--animate {
+  & .kpi-details-panel {
+    transition:
+      block-size var(--kpi-details-duration-out) ease-in,
+      opacity var(--kpi-details-duration-out) ease-in,
+      visibility 0s linear var(--kpi-details-duration-out);
+  }
+
+  & .kpi-details-content {
+    transition:
+      opacity calc(var(--kpi-details-duration-out) / 2) ease-in,
+      transform var(--kpi-details-duration-out) ease-in;
+  }
+
+  &.is-open .kpi-details-panel {
+    transition:
+      block-size var(--kpi-details-duration-in) var(--kpi-details-ease),
+      opacity 120ms ease-out,
+      visibility 0s;
+  }
+
+  &.is-open .kpi-details-content {
+    transition:
+      opacity 200ms ease-out 60ms,
+      transform var(--kpi-details-duration-in) var(--kpi-details-ease);
+  }
+}
+
+/* --- Chart entrances ----------------------------------------------------- */
+
+/* A transition cannot run on mount; a `from`-only keyframe fills the bar to its own width. */
+.kpi-progress-fill {
+  transition: inline-size var(--kpi-duration-progress) ease-out;
+  animation: kpi-progress-fill var(--kpi-duration-progress) ease-out;
+}
+
+@keyframes kpi-progress-fill {
+  from {
+    inline-size: 0;
+  }
+}
+
+/*
+ * Bars rise from the baseline in turn. 36 is `HEIGHT - CHART_VERTICAL_PADDING`.
+ * `backwards` holds each bar at zero through its delay.
+ */
+.kpi-chart rect {
+  transition:
+    height var(--kpi-duration-bar) ease-out,
+    y var(--kpi-duration-bar) ease-out;
+  animation: kpi-bar-rise var(--kpi-duration-bar) cubic-bezier(0.22, 1, 0.36, 1)
+    backwards;
+  animation-delay: calc(var(--kpi-bar-index, 0) * var(--kpi-bar-stagger));
+}
+
+@keyframes kpi-bar-rise {
+  from {
+    height: 0;
+    y: 36px;
+  }
+}
+
+/* Line draw: with `pathLength="1"`, a dash of 1 is the whole line. */
+.kpi-chart polyline {
+  stroke-dasharray: 1;
+  animation: kpi-line-draw var(--kpi-duration-line) ease-in-out backwards;
+}
+
+@keyframes kpi-line-draw {
+  from {
+    stroke-dashoffset: 1;
+    opacity: 0;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+/* --- Everything else ----------------------------------------------------- */
+
+@keyframes kpi-fade-in {
+  from {
+    opacity: 0.5;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kpi-value-animate {
+  animation: kpi-fade-in var(--kpi-duration-slow) ease-out forwards;
+}
+
+.kpi--loading {
+  animation: kpi-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes kpi-pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kpi,
+  .kpi *,
+  .kpi-shell,
+  .kpi-shell * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    /* Delays too: a staggered bar would otherwise wait invisible, then appear. */
+    transition-delay: 0ms !important;
+    animation-delay: 0ms !important;
+  }
+}

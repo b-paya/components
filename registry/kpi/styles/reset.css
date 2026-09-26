@@ -1,0 +1,50 @@
+/* Zero-specificity defaults the card needs whatever the page's reset. What a
+ * page's element rules would override is restated on the classes in layout.css. */
+
+:where(.kpi, .kpi-shell) {
+  &,
+  & :where(*, *::before, *::after) {
+    box-sizing: border-box;
+  }
+
+  & :where(dl, dt, dd) {
+    margin: 0;
+  }
+}
+
+:where(.kpi) {
+  & :where(h3, p, span, div, svg) {
+    margin: 0;
+    padding: 0;
+  }
+
+  & :where(button) {
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    appearance: none;
+  }
+
+  & :where(svg) {
+    display: block;
+    overflow: visible;
+  }
+}
+
+/* Visually hidden; absolute so it adds no flex gap. */
+.kpi-sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}

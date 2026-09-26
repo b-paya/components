@@ -1,0 +1,10 @@
+{
+  "name": "b-paya-components",
+  "private": true,
+  "scripts": {
+    "build": "shadcn build"
+  },
+  "devDependencies": {
+    "shadcn": "4.21.0"
+  }
+}

@@ -1,0 +1,163 @@
+/*
+ * Tokens live on the card, not `:root`. Dark mode follows the nearest
+ * `data-theme` or `.dark`, else the operating system.
+ *
+ * Not `light-dark()`: Vite and Next.js polyfill it in a way that needs a
+ * literal `color-scheme`. Instead one of `--kpi-light` / `--kpi-dark` is
+ * `initial` (so `var()` takes its fallback) and the other is empty.
+ */
+
+:where([data-theme="light"]) {
+  --kpi-color-scheme: light;
+  --kpi-light: initial;
+  --kpi-dark: ;
+}
+
+:where([data-theme="dark"], .dark) {
+  --kpi-color-scheme: dark;
+  --kpi-light: ;
+  --kpi-dark: initial;
+}
+
+/* Any other `data-theme` value falls back to the operating system. */
+.kpi-theme:not(
+  :is([data-theme="light"], [data-theme="dark"], .dark),
+  :is([data-theme="light"], [data-theme="dark"], .dark) *
+) {
+  --kpi-light: initial;
+  --kpi-dark: ;
+
+  @media (prefers-color-scheme: dark) {
+    --kpi-light: ;
+    --kpi-dark: initial;
+  }
+}
+
+/* --- Light: Tailwind slate --------------------------------------------- */
+.kpi-theme {
+  --kpi-radius: var(--kpi-radius-override, 0.75rem);
+
+  --kpi-radius-sm: var(--kpi-radius-sm-override, 0.25rem);
+  --kpi-radius-md: var(--kpi-radius-md-override, 0.375rem);
+
+  --kpi-background: var(
+    --kpi-background-override,
+    var(--kpi-light, oklch(98.4% 0.003 247.858))
+      var(--kpi-dark, oklch(14.1% 0.005 285.823))
+  ); /* slate-50 / zinc-950 */
+  --kpi-foreground: var(
+    --kpi-foreground-override,
+    var(--kpi-light, oklch(12.9% 0.042 264.695))
+      var(--kpi-dark, oklch(98.5% 0 0))
+  ); /* slate-950 / zinc-50 */
+  --kpi-card: var(
+    --kpi-card-override,
+    var(--kpi-light, oklch(100% 0 0)) var(--kpi-dark, oklch(21% 0.006 285.885))
+  ); /* white / zinc-900 */
+  --kpi-card-foreground: var(
+    --kpi-card-foreground-override,
+    var(--kpi-foreground)
+  );
+  --kpi-muted: var(
+    --kpi-muted-override,
+    var(--kpi-light, oklch(96.8% 0.007 247.896))
+      var(--kpi-dark, oklch(27.4% 0.006 286.033))
+  ); /* slate-100 / zinc-800 */
+  --kpi-muted-foreground: var(
+    --kpi-muted-foreground-override,
+    var(--kpi-light, oklch(44.6% 0.043 257.281))
+      var(--kpi-dark, oklch(70.5% 0.015 286.067))
+  ); /* slate-600 / zinc-400 */
+  --kpi-destructive: var(
+    --kpi-destructive-override,
+    var(--kpi-light, oklch(58.6% 0.253 17.585))
+      var(--kpi-dark, oklch(71.2% 0.194 13.428))
+  ); /* rose-600 / rose-400 */
+  --kpi-success: var(
+    --kpi-success-override,
+    var(--kpi-light, oklch(59.6% 0.145 163.225))
+      var(--kpi-dark, oklch(76.5% 0.177 163.223))
+  ); /* emerald-600 / emerald-400 */
+  --kpi-border: var(
+    --kpi-border-override,
+    var(--kpi-light, oklch(92.9% 0.013 255.508))
+      var(--kpi-dark, oklch(100% 0 0 / 10%))
+  ); /* slate-200 / white 10% */
+  --kpi-ring: var(
+    --kpi-ring-override,
+    var(--kpi-light, oklch(70.4% 0.04 256.788))
+      var(--kpi-dark, oklch(55.2% 0.016 285.938))
+  ); /* slate-400 / zinc-500 */
+  color-scheme: var(--kpi-color-scheme, light dark);
+}
+
+/* Card-specific tokens, built on the theme above. */
+.kpi,
+.kpi-shell {
+  --kpi-surface: var(
+    --kpi-surface-override,
+    var(--kpi-light, color-mix(in oklab, var(--kpi-card) 80%, transparent))
+      var(--kpi-dark, color-mix(in oklab, var(--kpi-card) 70%, transparent))
+  );
+  --kpi-surface-muted: var(
+    --kpi-surface-muted-override,
+    var(--kpi-light, color-mix(in oklab, var(--kpi-card) 55%, transparent))
+      var(--kpi-dark, color-mix(in oklab, var(--kpi-card) 50%, transparent))
+  );
+  --kpi-border-subtle: var(
+    --kpi-border-subtle-override,
+    var(--kpi-light, color-mix(in oklab, var(--kpi-foreground) 6%, transparent))
+      var(
+        --kpi-dark,
+        color-mix(in oklab, var(--kpi-foreground) 5%, transparent)
+      )
+  );
+  --kpi-blur: var(--kpi-blur-override, 12px);
+  --kpi-padding: var(--kpi-padding-override, 1.5rem);
+  --kpi-trend-color: var(
+    --kpi-trend-color-override,
+    var(--kpi-muted-foreground)
+  );
+  --kpi-chart-color: var(
+    --kpi-chart-color-override,
+    var(--kpi-muted-foreground)
+  );
+
+  --kpi-font-sans: var(
+    --kpi-font-sans-override,
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    sans-serif
+  );
+  --kpi-font-mono: var(
+    --kpi-font-mono-override,
+    "JetBrains Mono",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    "Liberation Mono",
+    monospace
+  );
+
+  --kpi-duration: var(--kpi-duration-override, 200ms);
+  --kpi-duration-slow: var(--kpi-duration-slow-override, 300ms);
+  /* The three chart animations. */
+  --kpi-duration-progress: var(--kpi-duration-progress-override, 1s);
+  --kpi-duration-bar: var(--kpi-duration-bar-override, 420ms);
+  --kpi-duration-line: var(--kpi-duration-line-override, 1200ms);
+  /* Stagger between neighbouring sparkline bars. */
+  --kpi-bar-stagger: var(--kpi-bar-stagger-override, 20ms);
+  --kpi-details-duration-in: var(--kpi-details-duration-in-override, 320ms);
+  --kpi-details-duration-out: var(--kpi-details-duration-out-override, 180ms);
+  --kpi-details-ease: var(
+    --kpi-details-ease-override,
+    cubic-bezier(0.22, 1, 0.36, 1)
+  );
+}

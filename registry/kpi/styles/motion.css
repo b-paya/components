@@ -1,14 +1,10 @@
 /* Motion: details open/close, chart entrances, value fade, loading pulse,
    reduced-motion.
 
-   The three chart animations used to be `motion/react` transitions inside the
-   components. That library was this demo's only third-party dependency and
-   cost 39,966 B brotli — for a width, a rectangle and a line draw, all three of
-   which CSS does natively. It also meant each of them branched on
-   `useReducedMotion()` in JavaScript, where the rule for these islands is that
-   the stylesheet answers that question and the script never does. The
-   `prefers-reduced-motion` block at the foot of this file now covers all three
-   for free. */
+   Every animation is CSS: a width, a rectangle and a line draw need no
+   animation library, and the reduced-motion question is answered here, once,
+   by the `prefers-reduced-motion` block at the foot of this file. The script
+   never asks it. */
 
 .kpi-details--animate {
   & .kpi-details-panel {
@@ -148,10 +144,8 @@
     animation-iteration-count: 1 !important;
     /* Delays have to go too, not just durations. The sparkline bars stagger
        with `animation-delay` and hold at zero height through it — that is what
-       `backwards` is for — so a bar whose duration was collapsed but whose
-       delay survived sat invisible at the baseline for its half-second and
-       then appeared. Caught in the browser: the thirtieth bar was still
-       `height: 0px` after load with reduced motion on. */
+       `backwards` is for — so a bar whose duration collapsed but whose delay
+       survived would sit invisible at the baseline, then appear. */
     transition-delay: 0ms !important;
     animation-delay: 0ms !important;
   }

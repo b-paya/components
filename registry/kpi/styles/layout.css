@@ -46,6 +46,14 @@
   interpolate-size: allow-keywords;
 }
 
+/* The shell takes focus itself only when the card has no button to reach the
+ * panel through. */
+.kpi-shell:focus-visible {
+  outline: 2px solid var(--kpi-ring);
+  outline-offset: 2px;
+  border-radius: var(--kpi-radius);
+}
+
 .kpi-details {
   position: absolute;
   inset-block-start: 100%;
@@ -145,6 +153,12 @@
 
 /* The title keeps its local typeface even if a host styles headings directly. */
 .kpi-title {
+  /* Restated on the class, not only in the zero-specificity reset: a page's own
+   * unlayered `h3` rule would otherwise win. */
+  margin: 0;
+  padding: 0;
+  letter-spacing: normal;
+  text-transform: none;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -178,6 +192,15 @@
 /* --- Action button ------------------------------------------------------- */
 
 .kpi-button {
+  /* As `.kpi-title`: what a page's own `button` rule would change. */
+  margin: 0;
+  padding: 0;
+  min-inline-size: 0;
+  min-block-size: 0;
+  font: inherit;
+  box-shadow: none;
+  cursor: pointer;
+  appearance: none;
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -391,4 +414,27 @@
     block-size: 0.75rem;
     margin-block-start: auto;
   }
+}
+
+/* --- Right-to-left ------------------------------------------------------ */
+
+/* Layout is written in logical properties, so it follows `dir` on its own.
+ * What does not is drawing: the trend arrow and the chart point along the
+ * reading direction, so time runs from the inline start in both.
+ *
+ * The nearest `dir` decides, through an inherited factor, as the theme does.
+ * Not `:dir(rtl)`: Vite and Next.js lower it to a list of `:lang()` selectors,
+ * which answer to `lang`, not `dir`, so a page with only `dir="rtl"` would keep
+ * its drawings unmirrored. */
+:where([dir="rtl"]) {
+  --kpi-mirror: -1;
+}
+
+:where([dir="ltr"]) {
+  --kpi-mirror: 1;
+}
+
+.kpi-trend-badge svg,
+.kpi-chart svg {
+  transform: scaleX(var(--kpi-mirror, 1));
 }

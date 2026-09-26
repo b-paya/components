@@ -18,12 +18,9 @@ type SparklineProps = {
  * design: the numbers next to it carry the information, so it is hidden from
  * assistive tech.
  *
- * Both entrances live in `styles/motion.css`. They used to be `motion/react`
- * transitions here, which made a 40 kB library this demo's only third-party
- * dependency and put the reduced-motion decision in the script — where, for a
- * portable island, it does not belong. The bars carry their index so the
- * stylesheet can stagger them; nothing else about the animation reaches this
- * file.
+ * Both entrances live in `styles/motion.css`, which also answers the
+ * reduced-motion question. The bars carry their index so the stylesheet can
+ * stagger them; nothing else about the animation reaches this file.
  */
 export function Sparkline({ data, type = "line" }: SparklineProps) {
   if (data.length === 0) return null;
@@ -47,8 +44,8 @@ export function Sparkline({ data, type = "line" }: SparklineProps) {
     );
   }
 
-  // One point has no span to draw a line across. A polyline of one point
-  // renders nothing, which left an empty chart area; a dot says "one reading".
+  // One point has no span to draw a line across, and a polyline of one point
+  // renders nothing. A dot says "one reading".
   if (data.length === 1) {
     return (
       <svg aria-hidden="true" focusable="false" height={HEIGHT} width={WIDTH}>

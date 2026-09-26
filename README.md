@@ -14,7 +14,7 @@ With the [shadcn CLI](https://ui.shadcn.com/docs/cli), in a project that has a `
 npx shadcn@latest add https://raw.githubusercontent.com/b-paya/components/main/public/r/kpi.json
 ```
 
-The files land in `components/kpi/`. Without the CLI, copy `registry/kpi/` into your project; its README lists what to keep.
+The files land in `components/kpi/`. They are TypeScript and are not transpiled on install, so the project needs TypeScript (`"tsx": true` in `components.json`). Without the CLI, copy `registry/kpi/` into your project; its README lists what to keep.
 
 ## Licence
 

@@ -56,7 +56,7 @@ export type KpiProps = {
   /**
    * Fixed decimals for `number`, `currency`, `compact` and `percentage`.
    * Applied to the value and target. When omitted, each format keeps its own
-   * default (`number`: locale default; `currency`: 0–1; `compact`: max 1;
+   * default (`number`: locale default; `currency`: the currency's own decimals, none for a whole amount; `compact`: max 1;
    * `percentage`: 1–2).
    */
   fractionDigits?: number;
@@ -94,7 +94,7 @@ const NO_HISTORY: number[] = [];
  * Self-contained KPI card: a title, one large value, an optional trend badge,
  * sparkline, target progress and a details panel revealed on hover, focus or tap.
  *
- * The folder is a portable island. It imports no design tokens, no `cn()`
+ * The folder is self-contained. It imports no design tokens, no `cn()`
  * helper and no sibling components; all styling lives in `styles/` behind the
  * `kpi-` class / token prefix and every import inside the folder is relative. Copy
  * `kpi/` into another project; it needs nothing beyond React.
@@ -166,6 +166,9 @@ export function Kpi({
   }, [clearCopyTimer, value]);
 
   const rootClassName = ["kpi-theme", "kpi", className].filter(Boolean).join(" ");
+  // With details, the shell is the root: `className` goes there, so placement
+  // classes (a grid span, a margin) work the same with or without a panel.
+  const cardClassName = detailsActive ? "kpi-theme kpi" : rootClassName;
 
   if (isLoading) {
     return (
@@ -190,7 +193,7 @@ export function Kpi({
   const valueParts = formatValueParts(value, formatOptions);
 
   const card = (
-    <div className={`${rootClassName} kpi--tone-${tone}`}>
+    <div className={`${cardClassName} kpi--tone-${tone}`}>
       <div className="kpi-header">
         <h3 className="kpi-title">{title}</h3>
 
@@ -267,9 +270,7 @@ export function Kpi({
             role="progressbar"
           >
             {/* The fill's width and its entrance both live in the stylesheet;
-                this passes the fraction and nothing else. It used to be a
-                `motion/react` transition, which made a 40 kB library this
-                demo's only third-party dependency for one animated width. */}
+                this passes the fraction and nothing else. */}
             <div
               className="kpi-progress-fill"
               style={{ "--kpi-progress": targetProgress / 100 } as React.CSSProperties}
@@ -284,8 +285,12 @@ export function Kpi({
 
   return (
     <KpiDetailsShell
+      className={className}
       details={details}
       detailsLabel={detailsLabel}
+      // Without a button inside, nothing in the card takes focus, and the
+      // panel would be out of reach of a keyboard or a screen reader.
+      focusLabel={showCopyButton || onActionClick ? undefined : title}
     >
       {card}
     </KpiDetailsShell>
@@ -322,8 +327,11 @@ export function KpiDetails({ rows }: KpiDetailsProps) {
 
 type KpiDetailsShellProps = {
   children: ReactNode;
+  className?: string;
   details: ReactNode;
   detailsLabel: string;
+  /** When set, the shell itself takes focus, named by this. */
+  focusLabel?: string;
 };
 
 type TouchPress = {
@@ -331,6 +339,16 @@ type TouchPress = {
   startX: number;
   startY: number;
 };
+
+/** Whether focus came from a keyboard. An engine without `:focus-visible` says yes. */
+function isKeyboardFocus(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return true;
+  try {
+    return target.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
 
 function isTouchToggleTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
@@ -341,8 +359,10 @@ function isTouchToggleTarget(target: EventTarget | null): boolean {
 /** Owns open/close timers so omitting `details` unmounts and resets state. */
 function KpiDetailsShell({
   children,
+  className,
   details,
   detailsLabel,
+  focusLabel,
 }: KpiDetailsShellProps) {
   const [open, setOpen] = useState(false);
   const detailsId = useId();
@@ -350,6 +370,8 @@ function KpiDetailsShell({
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchPressRef = useRef<TouchPress | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
+  /** A panel a tap opened closes on a tap, a press outside or Escape — not on blur. */
+  const openedByTapRef = useRef(false);
 
   const clearTimers = useCallback(() => {
     if (openTimerRef.current != null) {
@@ -363,6 +385,7 @@ function KpiDetailsShell({
   }, []);
 
   const scheduleOpen = useCallback(() => {
+    openedByTapRef.current = false;
     clearTimers();
     openTimerRef.current = setTimeout(() => setOpen(true), DETAILS_OPEN_DELAY_MS);
   }, [clearTimers]);
@@ -373,6 +396,7 @@ function KpiDetailsShell({
   }, [clearTimers]);
 
   const closeNow = useCallback(() => {
+    openedByTapRef.current = false;
     clearTimers();
     setOpen(false);
   }, [clearTimers]);
@@ -413,23 +437,29 @@ function KpiDetailsShell({
     ) return;
 
     clearTimers();
-    setOpen((current) => !current);
-  }, [clearTimers]);
+    openedByTapRef.current = !open;
+    setOpen(!open);
+  }, [clearTimers, open]);
 
   /*
    * While the panel is open, and only then: Escape closes it, and a press
    * anywhere outside the card does too — on a touch screen there is no pointer
    * to leave, so without it the panel stays over the page.
    *
-   * Escape is claimed in the capture phase on `window`, ahead of any host
-   * handler on `document`: a page that closes a view on Escape (a dialog, a
-   * preview frame) would otherwise close it on the same key press.
+   * Escape is taken in the capture phase on `window` and marked handled
+   * (`defaultPrevented`), so a page handler that respects that — one that
+   * closes a dialog or a view on Escape — does not act on the same key press.
+   * Only when focus is in the card or on nothing: with focus in another
+   * widget, the key is that widget's.
    */
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
+      const active = document.activeElement;
+      const shell = shellRef.current;
+      if (active && active !== document.body && shell && !shell.contains(active)) return;
       event.preventDefault();
       closeNow();
     };
@@ -451,19 +481,33 @@ function KpiDetailsShell({
   return (
     <div
       aria-details={open ? detailsId : undefined}
-      className="kpi-theme kpi-shell"
+      aria-label={focusLabel}
+      className={["kpi-theme", "kpi-shell", className].filter(Boolean).join(" ")}
       onBlur={(event) => {
         const next = event.relatedTarget;
+        // Tapping the card after a button in it moves focus off the button to
+        // nothing; that blur must not close the panel the same tap just
+        // opened. Focus that moves on to something else still closes it.
+        if (openedByTapRef.current && next == null) return;
         if (next instanceof Node && event.currentTarget.contains(next)) return;
         scheduleClose();
       }}
-      onFocus={scheduleOpen}
+      onFocus={(event) => {
+        // Only keyboard focus opens the panel. A phone focuses the button it
+        // taps, and a click focuses too; neither is a request for the panel,
+        // and a mouse opens it by hovering. `:focus-visible` is the browser's
+        // own answer to which focus came from a keyboard.
+        if (!isKeyboardFocus(event.target)) return;
+        scheduleOpen();
+      }}
       onPointerCancel={handleTouchPointerCancel}
       onPointerDown={handleTouchPointerDown}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
       onPointerUp={handleTouchPointerUp}
       ref={shellRef}
+      role={focusLabel ? "group" : undefined}
+      tabIndex={focusLabel ? 0 : undefined}
     >
       {children}
       <div

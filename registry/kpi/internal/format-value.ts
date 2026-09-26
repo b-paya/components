@@ -60,12 +60,16 @@ function numberFormatOptions(
         notation: "compact",
       };
     case "currency":
-      return {
-        currency,
-        maximumFractionDigits: fractionDigits ?? 1,
-        minimumFractionDigits: fractionDigits ?? 0,
-        style: "currency",
-      };
+      // Money shows the currency's own decimals ($19.50, ¥1,950), and none
+      // for a whole amount ($42,800) rather than a row of zeros.
+      return fractionDigits == null
+        ? ({ currency, style: "currency", trailingZeroDisplay: "stripIfInteger" } as Intl.NumberFormatOptions)
+        : {
+            currency,
+            maximumFractionDigits: fractionDigits,
+            minimumFractionDigits: fractionDigits,
+            style: "currency",
+          };
     case "percentage":
       return {
         maximumFractionDigits: fractionDigits ?? 2,

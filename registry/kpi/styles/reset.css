@@ -1,6 +1,8 @@
-/* Scoped reset — host Preflight / base styles still apply inside the card, so
- * we re-state the element defaults the component relies on. Every selector uses
- * `:where()` so specificity stays zero and the card's own rules always win. */
+/* Scoped reset: the element defaults the card relies on, whatever reset the
+ * page has or lacks. Every selector uses `:where()` so specificity stays zero
+ * and the card's own rules always win. A page's unlayered element rule
+ * (`button { padding }`, `h3 { margin }`) beats zero specificity too, so the
+ * properties that matter are restated on the card's classes in `layout.css`. */
 
 :where(.kpi, .kpi-shell) {
   &,

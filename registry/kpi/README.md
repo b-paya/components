@@ -16,9 +16,7 @@ kpi/
   styles/          index.css and the four files it imports
 ```
 
-Leave out the `*.test.*` files: they are this repository's tests.
-
-Requirements: React 18 or 19 (`react` and `react-dom` as peers), and a bundler that handles CSS imports, as Vite and Next.js do. `kpi.tsx` imports `styles/index.css` itself.
+Requirements: React 18 or 19 (`react` and `react-dom` as peers), **TypeScript**, and a bundler that handles CSS imports, as Vite and Next.js do. `kpi.tsx` imports `styles/index.css` itself. The files are TypeScript and are not transpiled on install, so a JavaScript project (`"tsx": false` in shadcn's `components.json`) cannot use them as they are.
 
 ## Minimal example
 
@@ -67,7 +65,7 @@ import { Kpi, KpiDetails } from "./kpi/kpi";
 | `onActionClick` | `() => void` | — | Adds an action button, for example to open a report. |
 | `actionLabel` | `string` | `"Open details"` | Accessible name of the action button. |
 | `actionIcon` | `ReactNode` | external-link icon | The action button's icon. |
-| `className` | `string` | — | An extra class on the root. |
+| `className` | `string` | — | An extra class on the outermost element, with or without a details panel. |
 
 Types: `KpiProps`, `KpiChartType`, `KpiSemantics`, `KpiDetailRow`.
 
@@ -81,10 +79,16 @@ A ready-made list for `details`. Any other node works too.
 
 ## Behaviour
 
-- **Details panel**: opens after a short pause on mouse hover or keyboard focus, and at once on a tap. It closes when the pointer or focus leaves, on a press outside the card, and on Escape. The card claims that Escape, so a page that also listens for Escape does not act on the same key press.
+- **Details panel**: opens after a short pause on mouse hover or keyboard focus, and at once on a tap. It closes when the pointer or focus leaves, on a press outside the card, and on Escape. A tap on a button does not open it.
+- **Keyboard**: the buttons lead to the panel. A card with details and no button takes focus itself, as a group named by its title.
+- **Escape**: while the panel is open and focus is in the card or on nothing, the card closes it and marks the key press handled (`defaultPrevented`), so a page handler that respects that does not act on it as well. With focus in another widget, the key is left to that widget.
 - **Loading**: `isLoading` shows a skeleton with `aria-busy`.
 - **Errors** are yours to render: the card shows what it is given, so do not pass a placeholder value as if it were real.
 - **Reduced motion**: every animation stops under `prefers-reduced-motion`.
+
+## Right-to-left
+
+The card follows the `dir` of the page, or of any ancestor: `<html dir="rtl">` is enough. Its layout is written in logical properties, so the title, the actions, the details panel and the target row mirror on their own, and the trend arrow and the chart are mirrored so time runs from the reading start. Pass the matching `locale` (`ar`, `he`, `fa`) for numbers in that language's digits and order.
 
 ## Theming
 
@@ -148,9 +152,13 @@ export function RevenueKpi() {
 }
 ```
 
-In a framework with server components, such as Next.js, fetch on the server and pass the result as props; `kpi.tsx` is marked `"use client"`.
+In a framework with server components, such as Next.js, fetch on the server and pass the result as props. `kpiRuntime.tsx` is the client module (`"use client"`); import from `kpi.tsx` as usual, from a server component too. `onActionClick` is a function, so a card that uses it has to be rendered from a client component.
 
 Keep `historyData` oldest first, pass `previousValue` only when it is a real earlier reading, and use `semantics="inverted"` where a drop is good (latency, error rate, churn).
+
+## Known limitations
+
+- **Server rendering and number formats.** Values are formatted with `Intl.NumberFormat` during render. A server whose ICU data differs from the browser's (a different space character in `fr-FR`, `US$` for `$`) renders text the browser then corrects, which React reports as a hydration mismatch. It shows only where the server's and the browser's ICU versions format the locale differently; where it does, render the card on the client only.
 
 ## Licences
 

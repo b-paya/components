@@ -5,15 +5,11 @@ type IconProps = SVGProps<SVGSVGElement> & {
 };
 
 /**
- * Icon path data from Lucide (https://lucide.dev), ISC licence,
+ * Icon paths from Lucide, ISC licence,
  * © Lucide Contributors (2022) and © Cole Bemis (2013–2022, Feather).
  */
 
-/**
- * Shared frame for the card's icons, inlined so the component needs no icon
- * font or icon package. Every icon inherits `currentColor` and is decorative —
- * the surrounding button or badge carries the accessible name.
- */
+/** Decorative; the surrounding button or badge carries the name. */
 function Icon({ children, size = 12, ...props }: IconProps) {
   return (
     <svg

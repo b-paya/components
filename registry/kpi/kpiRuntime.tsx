@@ -48,17 +48,12 @@ export type KpiProps = {
   copyLabel?: string;
   /** ISO 4217 code, used when `format` is `"currency"`. */
   currency?: string;
-  /** Hover, focus or touch-tap details panel body. Feature is inactive when omitted. */
+  /** Panel shown on hover, keyboard focus or tap. No panel when omitted. */
   details?: ReactNode;
   /** Accessible name of the details group. */
   detailsLabel?: string;
   format?: KpiFormat;
-  /**
-   * Fixed decimals for `number`, `currency`, `compact` and `percentage`.
-   * Applied to the value and target. When omitted, each format keeps its own
-   * default (`number`: locale default; `currency`: the currency's own decimals, none for a whole amount; `compact`: max 1;
-   * `percentage`: 1–2).
-   */
+  /** Fixed decimals for the value and target. Each format has its own default. */
   fractionDigits?: number;
   /** Oldest value first. */
   historyData?: number[];
@@ -74,11 +69,7 @@ export type KpiProps = {
   targetValue?: number | null;
   title: string;
   value: number;
-  /**
-   * Measure unit (`"km/s"`) shown after the main value and both target-footer
-   * values. Currency and percent affixes come from `format` instead, so they
-   * stay locale-correct.
-   */
+  /** Unit after the value and target (`"km/s"`). Currency and percent come from `format`. */
   valueUnit?: string;
 };
 
@@ -87,17 +78,12 @@ const DETAILS_OPEN_DELAY_MS = 500;
 const DETAILS_CLOSE_DELAY_MS = 200;
 const TOUCH_TAP_MOVE_TOLERANCE_PX = 8;
 
-/** Stable identity for the default, so `Kpi` stays safe to wrap in `memo`. */
+/** Stable default, so `memo` still works. */
 const NO_HISTORY: number[] = [];
 
 /**
- * Self-contained KPI card: a title, one large value, an optional trend badge,
- * sparkline, target progress and a details panel revealed on hover, focus or tap.
- *
- * The folder is self-contained. It imports no design tokens, no `cn()`
- * helper and no sibling components; all styling lives in `styles/` behind the
- * `kpi-` class / token prefix and every import inside the folder is relative. Copy
- * `kpi/` into another project; it needs nothing beyond React.
+ * KPI card: a title, one large value, an optional trend badge, sparkline,
+ * target progress and a details panel.
  *
  * @example
  * <Kpi
@@ -160,14 +146,14 @@ export function Kpi({
         copyTimerRef.current = null;
       }, COPIED_RESET_MS);
     } catch {
-      // Clipboard access is unavailable (insecure origin, denied permission).
-      // Silently keep the previous state rather than breaking the card.
+      // No clipboard access (insecure origin or denied permission).
     }
   }, [clearCopyTimer, value]);
 
-  const rootClassName = ["kpi-theme", "kpi", className].filter(Boolean).join(" ");
-  // With details, the shell is the root: `className` goes there, so placement
-  // classes (a grid span, a margin) work the same with or without a panel.
+  const rootClassName = ["kpi-theme", "kpi", className]
+    .filter(Boolean)
+    .join(" ");
+  // With details the shell is the root, so layout classes belong on it.
   const cardClassName = detailsActive ? "kpi-theme kpi" : rootClassName;
 
   if (isLoading) {
@@ -180,16 +166,31 @@ export function Kpi({
     );
   }
 
-  const { delta, deltaPercent, hasComparison, showTarget, targetProgress, tone } =
-    computeKpiMetrics({ previousValue, semantics, targetValue, value });
+  const {
+    delta,
+    deltaPercent,
+    hasComparison,
+    showTarget,
+    targetProgress,
+    tone,
+  } = computeKpiMetrics({ previousValue, semantics, targetValue, value });
 
-  const TrendIcon = delta > 0 ? ArrowUpRightIcon : delta < 0 ? ArrowDownRightIcon : MinusIcon;
+  const TrendIcon =
+    delta > 0 ? ArrowUpRightIcon : delta < 0 ? ArrowDownRightIcon : MinusIcon;
   const showChart = historyData.length > 0 && chartType !== "none";
   const visibleDeltaPercent = formatPercentChange(deltaPercent, { locale });
   const signedDeltaPercent =
-    deltaPercent == null ? null : formatPercentChange(deltaPercent, { locale, signed: true });
+    deltaPercent == null
+      ? null
+      : formatPercentChange(deltaPercent, { locale, signed: true });
 
-  const formatOptions = { currency, format, fractionDigits, locale, unit: valueUnit };
+  const formatOptions = {
+    currency,
+    format,
+    fractionDigits,
+    locale,
+    unit: valueUnit,
+  };
   const valueParts = formatValueParts(value, formatOptions);
 
   const card = (
@@ -221,7 +222,10 @@ export function Kpi({
 
       <div className="kpi-body">
         {/* Remounting on a new value replays the CSS fade in `.kpi-value-animate`. */}
-        <span className="kpi-value kpi-value-animate" key={partsToText(valueParts)}>
+        <span
+          className="kpi-value kpi-value-animate"
+          key={partsToText(valueParts)}
+        >
           <ValueParts parts={valueParts} />
         </span>
 
@@ -257,8 +261,13 @@ export function Kpi({
             </span>
             <span className="kpi-footer-value">
               <ValueParts parts={valueParts} />
-              <span className="kpi-value-part kpi-value-part--literal"> / </span>
-              <ValueParts parts={formatValueParts(targetValue, formatOptions)} />
+              <span className="kpi-value-part kpi-value-part--literal">
+                {" "}
+                /{" "}
+              </span>
+              <ValueParts
+                parts={formatValueParts(targetValue, formatOptions)}
+              />
             </span>
           </div>
           <div
@@ -273,7 +282,11 @@ export function Kpi({
                 this passes the fraction and nothing else. */}
             <div
               className="kpi-progress-fill"
-              style={{ "--kpi-progress": targetProgress / 100 } as React.CSSProperties}
+              style={
+                {
+                  "--kpi-progress": targetProgress / 100,
+                } as React.CSSProperties
+              }
             />
           </div>
         </div>
@@ -288,8 +301,7 @@ export function Kpi({
       className={className}
       details={details}
       detailsLabel={detailsLabel}
-      // Without a button inside, nothing in the card takes focus, and the
-      // panel would be out of reach of a keyboard or a screen reader.
+      // With no button inside, the shell itself must be focusable.
       focusLabel={showCopyButton || onActionClick ? undefined : title}
     >
       {card}
@@ -306,10 +318,7 @@ type KpiDetailsProps = {
   rows: KpiDetailRow[];
 };
 
-/**
- * Ready-made label/value list for the details panel. Pass it — or any other
- * node — into `Kpi`'s `details` prop; the card never fetches data itself.
- */
+/** Label/value list for the `details` prop. */
 export function KpiDetails({ rows }: KpiDetailsProps) {
   if (rows.length === 0) return null;
 
@@ -340,7 +349,7 @@ type TouchPress = {
   startY: number;
 };
 
-/** Whether focus came from a keyboard. An engine without `:focus-visible` says yes. */
+/** Whether focus came from a keyboard. Without `:focus-visible`, assume it did. */
 function isKeyboardFocus(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return true;
   try {
@@ -353,10 +362,14 @@ function isKeyboardFocus(target: EventTarget | null): boolean {
 function isTouchToggleTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) return false;
 
-  return target.closest(".kpi-details, a, button, input, select, textarea, [contenteditable], [role='button'], [role='link']") == null;
+  return (
+    target.closest(
+      ".kpi-details, a, button, input, select, textarea, [contenteditable], [role='button'], [role='link']",
+    ) == null
+  );
 }
 
-/** Owns open/close timers so omitting `details` unmounts and resets state. */
+/** Open state and timers; lives only while `details` is set. */
 function KpiDetailsShell({
   children,
   className,
@@ -370,7 +383,7 @@ function KpiDetailsShell({
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchPressRef = useRef<TouchPress | null>(null);
   const shellRef = useRef<HTMLDivElement>(null);
-  /** A panel a tap opened closes on a tap, a press outside or Escape — not on blur. */
+  /** A tap-opened panel ignores blur; it closes on a tap, a press outside or Escape. */
   const openedByTapRef = useRef(false);
 
   const clearTimers = useCallback(() => {
@@ -387,12 +400,18 @@ function KpiDetailsShell({
   const scheduleOpen = useCallback(() => {
     openedByTapRef.current = false;
     clearTimers();
-    openTimerRef.current = setTimeout(() => setOpen(true), DETAILS_OPEN_DELAY_MS);
+    openTimerRef.current = setTimeout(
+      () => setOpen(true),
+      DETAILS_OPEN_DELAY_MS,
+    );
   }, [clearTimers]);
 
   const scheduleClose = useCallback(() => {
     clearTimers();
-    closeTimerRef.current = setTimeout(() => setOpen(false), DETAILS_CLOSE_DELAY_MS);
+    closeTimerRef.current = setTimeout(
+      () => setOpen(false),
+      DETAILS_CLOSE_DELAY_MS,
+    );
   }, [clearTimers]);
 
   const closeNow = useCallback(() => {
@@ -401,56 +420,71 @@ function KpiDetailsShell({
     setOpen(false);
   }, [clearTimers]);
 
-  const handlePointerEnter = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "mouse") return;
-    scheduleOpen();
-  }, [scheduleOpen]);
+  const handlePointerEnter = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== "mouse") return;
+      scheduleOpen();
+    },
+    [scheduleOpen],
+  );
 
-  const handlePointerLeave = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "mouse") return;
-    scheduleClose();
-  }, [scheduleClose]);
+  const handlePointerLeave = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== "mouse") return;
+      scheduleClose();
+    },
+    [scheduleClose],
+  );
 
-  const handleTouchPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "touch" || !isTouchToggleTarget(event.target)) return;
+  const handleTouchPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (event.pointerType !== "touch" || !isTouchToggleTarget(event.target))
+        return;
 
-    touchPressRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-    };
-  }, []);
+      touchPressRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+      };
+    },
+    [],
+  );
 
-  const handleTouchPointerCancel = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (touchPressRef.current?.pointerId === event.pointerId) touchPressRef.current = null;
-  }, []);
+  const handleTouchPointerCancel = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (touchPressRef.current?.pointerId === event.pointerId)
+        touchPressRef.current = null;
+    },
+    [],
+  );
 
-  const handleTouchPointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    const touchPress = touchPressRef.current;
-    touchPressRef.current = null;
+  const handleTouchPointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const touchPress = touchPressRef.current;
+      touchPressRef.current = null;
 
-    if (
-      event.pointerType !== "touch" ||
-      touchPress?.pointerId !== event.pointerId ||
-      !isTouchToggleTarget(event.target) ||
-      Math.hypot(event.clientX - touchPress.startX, event.clientY - touchPress.startY) > TOUCH_TAP_MOVE_TOLERANCE_PX
-    ) return;
+      if (
+        event.pointerType !== "touch" ||
+        touchPress?.pointerId !== event.pointerId ||
+        !isTouchToggleTarget(event.target) ||
+        Math.hypot(
+          event.clientX - touchPress.startX,
+          event.clientY - touchPress.startY,
+        ) > TOUCH_TAP_MOVE_TOLERANCE_PX
+      )
+        return;
 
-    clearTimers();
-    openedByTapRef.current = !open;
-    setOpen(!open);
-  }, [clearTimers, open]);
+      clearTimers();
+      openedByTapRef.current = !open;
+      setOpen(!open);
+    },
+    [clearTimers, open],
+  );
 
   /*
-   * While the panel is open, and only then: Escape closes it, and a press
-   * anywhere outside the card does too — on a touch screen there is no pointer
-   * to leave, so without it the panel stays over the page.
-   *
-   * Escape is taken in the capture phase on `window` and marked handled
-   * (`defaultPrevented`), so a page handler that respects that — one that
-   * closes a dialog or a view on Escape — does not act on the same key press.
-   * Only when focus is in the card or on nothing: with focus in another
-   * widget, the key is that widget's.
+   * While open, Escape or a press outside closes the panel; touch has no
+   * pointer to leave. Escape is captured and marked handled so an enclosing
+   * dialog does not also close, but only when focus is in the card or nowhere.
    */
   useEffect(() => {
     if (!open) return;
@@ -459,13 +493,24 @@ function KpiDetailsShell({
       if (event.key !== "Escape" || event.defaultPrevented) return;
       const active = document.activeElement;
       const shell = shellRef.current;
-      if (active && active !== document.body && shell && !shell.contains(active)) return;
+      if (
+        active &&
+        active !== document.body &&
+        shell &&
+        !shell.contains(active)
+      )
+        return;
       event.preventDefault();
       closeNow();
     };
     const onPointerDown = (event: PointerEvent) => {
       const shell = shellRef.current;
-      if (shell && event.target instanceof Node && !shell.contains(event.target)) closeNow();
+      if (
+        shell &&
+        event.target instanceof Node &&
+        !shell.contains(event.target)
+      )
+        closeNow();
     };
 
     window.addEventListener("keydown", onKeyDown, true);
@@ -482,21 +527,18 @@ function KpiDetailsShell({
     <div
       aria-details={open ? detailsId : undefined}
       aria-label={focusLabel}
-      className={["kpi-theme", "kpi-shell", className].filter(Boolean).join(" ")}
+      className={["kpi-theme", "kpi-shell", className]
+        .filter(Boolean)
+        .join(" ")}
       onBlur={(event) => {
         const next = event.relatedTarget;
-        // Tapping the card after a button in it moves focus off the button to
-        // nothing; that blur must not close the panel the same tap just
-        // opened. Focus that moves on to something else still closes it.
+        // A tap moves focus to nothing; that blur must not close what it opened.
         if (openedByTapRef.current && next == null) return;
         if (next instanceof Node && event.currentTarget.contains(next)) return;
         scheduleClose();
       }}
       onFocus={(event) => {
-        // Only keyboard focus opens the panel. A phone focuses the button it
-        // taps, and a click focuses too; neither is a request for the panel,
-        // and a mouse opens it by hovering. `:focus-visible` is the browser's
-        // own answer to which focus came from a keyboard.
+        // Only keyboard focus opens the panel; taps and clicks focus too.
         if (!isKeyboardFocus(event.target)) return;
         scheduleOpen();
       }}

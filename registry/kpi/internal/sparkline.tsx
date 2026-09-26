@@ -1,6 +1,9 @@
 "use client";
 
-import { CHART_VERTICAL_PADDING, computeBarGeometry } from "./sparkline-geometry";
+import {
+  CHART_VERTICAL_PADDING,
+  computeBarGeometry,
+} from "./sparkline-geometry";
 
 export type SparklineType = "bar" | "line";
 
@@ -12,40 +15,32 @@ type SparklineProps = {
   type?: SparklineType;
 };
 
-/**
- * Micro chart drawn as plain SVG from the data points. Stroke and fill follow
- * `currentColor`, which `.kpi-chart` sets per trend tone. Decorative by
- * design: the numbers next to it carry the information, so it is hidden from
- * assistive tech.
- *
- * Both entrances live in `styles/motion.css`, which also answers the
- * reduced-motion question. The bars carry their index so the stylesheet can
- * stagger them; nothing else about the animation reaches this file.
- */
+/** Decorative: the numbers beside it carry the information. */
 export function Sparkline({ data, type = "line" }: SparklineProps) {
   if (data.length === 0) return null;
 
   if (type === "bar") {
     return (
       <svg aria-hidden="true" focusable="false" height={HEIGHT} width={WIDTH}>
-        {computeBarGeometry(data, { height: HEIGHT, width: WIDTH }).map((bar, index) => (
-          <rect
-            fill="currentColor"
-            height={bar.height}
-            key={index}
-            opacity={0.6}
-            style={{ "--kpi-bar-index": index } as React.CSSProperties}
-            width={bar.width}
-            x={bar.x}
-            y={bar.y}
-          />
-        ))}
+        {computeBarGeometry(data, { height: HEIGHT, width: WIDTH }).map(
+          (bar, index) => (
+            <rect
+              fill="currentColor"
+              height={bar.height}
+              key={index}
+              opacity={0.6}
+              style={{ "--kpi-bar-index": index } as React.CSSProperties}
+              width={bar.width}
+              x={bar.x}
+              y={bar.y}
+            />
+          ),
+        )}
       </svg>
     );
   }
 
-  // One point has no span to draw a line across, and a polyline of one point
-  // renders nothing. A dot says "one reading".
+  // A one-point polyline renders nothing; draw a dot.
   if (data.length === 1) {
     return (
       <svg aria-hidden="true" focusable="false" height={HEIGHT} width={WIDTH}>
@@ -63,7 +58,10 @@ export function Sparkline({ data, type = "line" }: SparklineProps) {
   const points = data
     .map((point, index) => {
       const x = (index / lastIndex) * WIDTH;
-      const y = HEIGHT - CHART_VERTICAL_PADDING - ((point - min) / range) * drawableHeight;
+      const y =
+        HEIGHT -
+        CHART_VERTICAL_PADDING -
+        ((point - min) / range) * drawableHeight;
       return `${x},${y}`;
     })
     .join(" ");

@@ -1,10 +1,4 @@
-/* Motion: details open/close, chart entrances, value fade, loading pulse,
-   reduced-motion.
-
-   Every animation is CSS: a width, a rectangle and a line draw need no
-   animation library, and the reduced-motion question is answered here, once,
-   by the `prefers-reduced-motion` block at the foot of this file. The script
-   never asks it. */
+/* All motion is CSS; reduced motion is handled once, at the end of this file. */
 
 .kpi-details--animate {
   & .kpi-details-panel {
@@ -36,15 +30,7 @@
 
 /* --- Chart entrances ----------------------------------------------------- */
 
-/*
- * The target bar fills from empty on first paint, and slides when the number
- * changes underneath it.
- *
- * A transition alone cannot do the first half: there is no previous value to
- * leave, so nothing interpolates on mount. The keyframe supplies that one, and
- * because it declares only `from`, the browser takes the element's own computed
- * size as the destination — no duplicate of the width in two places.
- */
+/* A transition cannot run on mount; a `from`-only keyframe fills the bar to its own width. */
 .kpi-progress-fill {
   transition: inline-size var(--kpi-duration-progress) ease-out;
   animation: kpi-progress-fill var(--kpi-duration-progress) ease-out;
@@ -57,22 +43,15 @@
 }
 
 /*
- * Sparkline bars rise from the baseline, each a beat after the one before it.
- *
- * `x`, `y`, `width` and `height` are CSS properties for SVG geometry, so the
- * rise is a keyframe rather than a per-frame write from JavaScript. The
- * baseline is the one literal here — `HEIGHT - CHART_VERTICAL_PADDING`, 40 − 4
- * — because a keyframe cannot read it off the element the way `from`-only
- * keyframes read a resting value.
- *
- * `backwards` holds the bar at zero through its stagger delay. Without it a bar
- * waiting its turn is drawn at full height and then jumps back down to start.
+ * Bars rise from the baseline in turn. 36 is `HEIGHT - CHART_VERTICAL_PADDING`.
+ * `backwards` holds each bar at zero through its delay.
  */
 .kpi-chart rect {
   transition:
     height var(--kpi-duration-bar) ease-out,
     y var(--kpi-duration-bar) ease-out;
-  animation: kpi-bar-rise var(--kpi-duration-bar) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: kpi-bar-rise var(--kpi-duration-bar) cubic-bezier(0.22, 1, 0.36, 1)
+    backwards;
   animation-delay: calc(var(--kpi-bar-index, 0) * var(--kpi-bar-stagger));
 }
 
@@ -83,14 +62,7 @@
   }
 }
 
-/*
- * The sparkline draws itself.
- *
- * The polyline carries `pathLength="1"`, which renormalises its own length to
- * one unit, so a dash of 1 is exactly the whole line whatever the data does to
- * its real length. Offsetting that dash out of view and back is the standard
- * line-draw, and it is what `pathLength: 0 → 1` was doing in the library.
- */
+/* Line draw: with `pathLength="1"`, a dash of 1 is the whole line. */
 .kpi-chart polyline {
   stroke-dasharray: 1;
   animation: kpi-line-draw var(--kpi-duration-line) ease-in-out backwards;
@@ -142,10 +114,7 @@
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    /* Delays have to go too, not just durations. The sparkline bars stagger
-       with `animation-delay` and hold at zero height through it — that is what
-       `backwards` is for — so a bar whose duration collapsed but whose delay
-       survived would sit invisible at the baseline, then appear. */
+    /* Delays too: a staggered bar would otherwise wait invisible, then appear. */
     transition-delay: 0ms !important;
     animation-delay: 0ms !important;
   }

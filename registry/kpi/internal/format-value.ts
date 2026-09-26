@@ -3,23 +3,18 @@ export type KpiFormat = "compact" | "currency" | "number" | "percentage";
 export type FormatValueOptions = {
   currency?: string;
   format?: KpiFormat;
-  /** Fixed decimals. Keeps a live value's width stable (min === max) so the
-   * sparkline never shifts. */
+  /** Fixed decimals, so a live value keeps its width. */
   fractionDigits?: number;
   locale?: string;
-  /** Measure unit rendered beside the number (`"km/s"`). Unlike the currency
-   * symbol or the percent sign this is not part of the locale's number
-   * notation, so it gets its own part and its own typography. */
+  /** Measure unit (`"km/s"`). Not locale notation, so it is its own part. */
   unit?: string;
 };
 
 /**
- * How a formatted fragment should be typeset:
- * - `digits`: the number itself, including separators and the sign
- * - `notation`: locale notation carried by `Intl` — currency symbol, percent
- *   sign, compact exponent. Reads as part of the number
- * - `unit`: a measure unit supplied by the caller. Reads as metadata
- * - `literal`: locale spacing between the number and its notation
+ * - `digits`: the number, with separators and sign
+ * - `notation`: currency symbol, percent sign or compact exponent from `Intl`
+ * - `unit`: the caller's measure unit
+ * - `literal`: locale spacing between them
  */
 export type KpiValuePartKind = "digits" | "literal" | "notation" | "unit";
 
@@ -30,14 +25,13 @@ export type KpiValuePart = {
 
 const PLACEHOLDER = "--";
 
-/**
- * Constructing an `Intl.NumberFormat` costs far more than using one, and a live
- * card reformats on every tick. Cache keys are built from props, so the map
- * holds one entry per formatting variant the app actually renders.
- */
+/** Creating an `Intl.NumberFormat` is expensive and a live card formats every tick. */
 const formatterCache = new Map<string, Intl.NumberFormat>();
 
-function cachedFormatter(key: string, create: () => Intl.NumberFormat): Intl.NumberFormat {
+function cachedFormatter(
+  key: string,
+  create: () => Intl.NumberFormat,
+): Intl.NumberFormat {
   const cached = formatterCache.get(key);
   if (cached != null) return cached;
 
@@ -56,14 +50,19 @@ function numberFormatOptions(
       return {
         compactDisplay: "short",
         maximumFractionDigits: fractionDigits ?? 1,
-        ...(fractionDigits == null ? {} : { minimumFractionDigits: fractionDigits }),
+        ...(fractionDigits == null
+          ? {}
+          : { minimumFractionDigits: fractionDigits }),
         notation: "compact",
       };
     case "currency":
-      // Money shows the currency's own decimals ($19.50, ¥1,950), and none
-      // for a whole amount ($42,800) rather than a row of zeros.
+      // The currency's own decimals ($19.50, ¥1,950), none for a whole amount.
       return fractionDigits == null
-        ? ({ currency, style: "currency", trailingZeroDisplay: "stripIfInteger" } as Intl.NumberFormatOptions)
+        ? ({
+            currency,
+            style: "currency",
+            trailingZeroDisplay: "stripIfInteger",
+          } as Intl.NumberFormatOptions)
         : {
             currency,
             maximumFractionDigits: fractionDigits,
@@ -79,7 +78,10 @@ function numberFormatOptions(
     case "number":
       return fractionDigits == null
         ? {}
-        : { maximumFractionDigits: fractionDigits, minimumFractionDigits: fractionDigits };
+        : {
+            maximumFractionDigits: fractionDigits,
+            minimumFractionDigits: fractionDigits,
+          };
     default: {
       const exhaustiveCheck: never = format;
       return exhaustiveCheck;
@@ -95,12 +97,15 @@ function numberFormat({
 }: FormatValueOptions): Intl.NumberFormat {
   return cachedFormatter(
     `value|${locale}|${format}|${currency}|${fractionDigits ?? "auto"}`,
-    () => new Intl.NumberFormat(locale, numberFormatOptions(format, currency, fractionDigits)),
+    () =>
+      new Intl.NumberFormat(
+        locale,
+        numberFormatOptions(format, currency, fractionDigits),
+      ),
   );
 }
 
-/** `percentage` takes whole-number percentages (`12.5` → `12.5%`), matching how
- * the delta is computed in `Kpi`, not the `Intl` convention of `0.125`. */
+/** Takes whole-number percentages (`12.5` → `12.5%`), not `Intl`'s `0.125`. */
 function toFormatterInput(value: number, format: KpiFormat): number {
   return format === "percentage" ? value / 100 : value;
 }
@@ -123,17 +128,15 @@ function classify(type: Intl.NumberFormatPartTypes): KpiValuePartKind {
 }
 
 /**
- * Splits a KPI value into typographic parts via `Intl.NumberFormat#formatToParts`,
- * so the card can style the currency symbol, percent sign, compact exponent and
- * measure unit without ever string-matching `"$"` or `"%"` — those move around
- * between locales. Nullish values yield a single `"--"` part, so a card with
- * missing data still renders at its normal height.
+ * Splits a value into typographic parts with `formatToParts`, since symbols
+ * move between locales. A missing value yields `"--"`, keeping the card's height.
  */
 export function formatValueParts(
   value: number | null | undefined,
   options: FormatValueOptions = {},
 ): KpiValuePart[] {
-  if (value == null || Number.isNaN(value)) return [{ kind: "digits", value: PLACEHOLDER }];
+  if (value == null || Number.isNaN(value))
+    return [{ kind: "digits", value: PLACEHOLDER }];
 
   const { format = "number", unit } = options;
 
@@ -143,26 +146,25 @@ export function formatValueParts(
 
   if (unit == null || unit === "") return parts;
 
-  return [...parts, { kind: "literal", value: " " }, { kind: "unit", value: unit }];
+  return [
+    ...parts,
+    { kind: "literal", value: " " },
+    { kind: "unit", value: unit },
+  ];
 }
 
-/** Flattens parts into plain text, for a React `key` that has to change
- * whenever the rendered number changes. */
+/** Plain text of the parts, used as a React `key`. */
 export function partsToText(parts: KpiValuePart[]): string {
   return parts.map((part) => part.value).join("");
 }
 
 type FormatPercentChangeOptions = {
   locale?: string;
-  /** When true, prefixes non-zero values with `+` / `−` via `signDisplay`. */
+  /** Prefix non-zero values with `+` or `−`. */
   signed?: boolean;
 };
 
-/**
- * Formats a relative change for the trend badge. Input is a whole-number
- * percentage (`12.5` → `12.5%`), matching how `computeKpiMetrics` computes
- * `deltaPercent`. Fixed to one decimal so the badge width stays stable.
- */
+/** Trend badge text from a whole-number percentage, one decimal so its width holds. */
 export function formatPercentChange(
   value: number | null | undefined,
   { locale = "en-US", signed = false }: FormatPercentChangeOptions = {},

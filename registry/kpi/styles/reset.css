@@ -1,8 +1,5 @@
-/* Scoped reset: the element defaults the card relies on, whatever reset the
- * page has or lacks. Every selector uses `:where()` so specificity stays zero
- * and the card's own rules always win. A page's unlayered element rule
- * (`button { padding }`, `h3 { margin }`) beats zero specificity too, so the
- * properties that matter are restated on the card's classes in `layout.css`. */
+/* Zero-specificity defaults the card needs whatever the page's reset. What a
+ * page's element rules would override is restated on the classes in layout.css. */
 
 :where(.kpi, .kpi-shell) {
   &,
@@ -39,8 +36,7 @@
   }
 }
 
-/* Visually hidden but announced by assistive tech. Absolute so it is not a
- * flex item and does not contribute to badge/action gaps. */
+/* Visually hidden; absolute so it adds no flex gap. */
 .kpi-sr-only {
   position: absolute;
   inline-size: 1px;

@@ -1,5 +1,3 @@
-/* Layout, structure and static visuals for the KPI card and its details panel. */
-
 .kpi {
   position: relative;
   display: flex;
@@ -7,8 +5,7 @@
   inline-size: 100%;
   block-size: 100%;
   padding: var(--kpi-padding);
-  /* The card sizes its own contents by its width, not the viewport's: it may
-   * sit in a narrow column on a wide screen. */
+  /* Sized by its own width: it may sit in a narrow column on a wide screen. */
   container: kpi / inline-size;
   overflow: hidden;
   color: var(--kpi-foreground);
@@ -18,8 +15,7 @@
   border-radius: var(--kpi-radius);
   backdrop-filter: blur(var(--kpi-blur));
 
-  /* `flat` keeps the muted default chart; `neutral` semantics get a brighter
-   * line so the chart stays readable when direction carries no judgement. */
+  /* Neutral semantics get a brighter line than the muted `flat` default. */
   &.kpi--tone-positive {
     --kpi-trend-color: var(--kpi-trend-color-override, var(--kpi-success));
     --kpi-chart-color: var(--kpi-chart-color-override, var(--kpi-success));
@@ -31,12 +27,14 @@
   }
 
   &.kpi--tone-neutral {
-    --kpi-chart-color: var(--kpi-chart-color-override, var(--kpi-muted-foreground));
+    --kpi-chart-color: var(
+      --kpi-chart-color-override,
+      var(--kpi-muted-foreground)
+    );
   }
 }
 
-/* Host for the hover details overlay. Overflow stays visible so the panel can
- * hang below the card without expanding document flow. */
+/* Overflow stays visible so the panel hangs below the card, out of flow. */
 .kpi-shell {
   position: relative;
   display: block;
@@ -46,8 +44,7 @@
   interpolate-size: allow-keywords;
 }
 
-/* The shell takes focus itself only when the card has no button to reach the
- * panel through. */
+/* Focusable only when the card has no button. */
 .kpi-shell:focus-visible {
   outline: 2px solid var(--kpi-ring);
   outline-offset: 2px;
@@ -86,8 +83,7 @@
   block-size: 0.5rem;
 }
 
-/* Padding sits on the content wrapper so a padded panel can still collapse to
- * block-size: 0. */
+/* Padding on the inner wrapper lets the panel collapse to zero. */
 .kpi-details-panel {
   block-size: 0;
   overflow: hidden;
@@ -97,12 +93,11 @@
   border: 1px solid var(--kpi-border);
   border-radius: var(--kpi-radius);
   opacity: 0;
-  /* Closed means gone for the keyboard too: a link passed in `details` must not
-   * stay in the tab order behind an invisible panel. `motion.css` delays this
-   * until the closing animation has run. */
+  /* Keeps links in a closed panel out of the tab order. */
   visibility: hidden;
   backdrop-filter: blur(var(--kpi-blur));
-  box-shadow: 0 12px 32px color-mix(in oklab, var(--kpi-background) 55%, transparent);
+  box-shadow: 0 12px 32px
+    color-mix(in oklab, var(--kpi-background) 55%, transparent);
 }
 
 .kpi-details-content {
@@ -151,10 +146,8 @@
   margin-block-end: 0.5rem;
 }
 
-/* The title keeps its local typeface even if a host styles headings directly. */
 .kpi-title {
-  /* Restated on the class, not only in the zero-specificity reset: a page's own
-   * unlayered `h3` rule would otherwise win. */
+  /* Restated here so a page's own `h3` rule cannot win. */
   margin: 0;
   padding: 0;
   letter-spacing: normal;
@@ -171,8 +164,7 @@
   text-overflow: ellipsis;
 }
 
-/* Actions stay visible on coarse pointers. On hover-capable devices they are
- * revealed on hover / focus-within. */
+/* Always visible on touch; revealed on hover or focus elsewhere. */
 .kpi-actions {
   display: flex;
   flex-shrink: 0;
@@ -192,7 +184,7 @@
 /* --- Action button ------------------------------------------------------- */
 
 .kpi-button {
-  /* As `.kpi-title`: what a page's own `button` rule would change. */
+  /* Restated so a page's own `button` rule cannot win. */
   margin: 0;
   padding: 0;
   min-inline-size: 0;
@@ -233,8 +225,6 @@
   }
 
   &:focus-visible {
-    /* Standard shadcn-style ring. A page may layer its own global focus
-     * effect over it; the card never depends on one. */
     outline: 2px solid var(--kpi-ring);
     outline-offset: 2px;
   }
@@ -341,10 +331,7 @@
   border-block-start: 1px solid var(--kpi-border-subtle);
 }
 
-/* Label left, figures right — and when the two do not fit on one line, the
- * figures move to a line of their own rather than breaking in the middle.
- * "420.0 km/s / 500.0 km/s" split across two lines reads as two numbers; the
- * label can take a second line without changing what it says. */
+/* When label and figures do not fit, the figures wrap whole: split, they read as two numbers. */
 .kpi-footer-row {
   display: flex;
   flex-wrap: wrap;
@@ -418,14 +405,9 @@
 
 /* --- Right-to-left ------------------------------------------------------ */
 
-/* Layout is written in logical properties, so it follows `dir` on its own.
- * What does not is drawing: the trend arrow and the chart point along the
- * reading direction, so time runs from the inline start in both.
- *
- * The nearest `dir` decides, through an inherited factor, as the theme does.
- * Not `:dir(rtl)`: Vite and Next.js lower it to a list of `:lang()` selectors,
- * which answer to `lang`, not `dir`, so a page with only `dir="rtl"` would keep
- * its drawings unmirrored. */
+/* Logical properties follow `dir`; drawings are mirrored so time runs from the
+ * inline start. Not `:dir()`: Vite and Next.js lower it to `:lang()`, which
+ * ignores `dir`. */
 :where([dir="rtl"]) {
   --kpi-mirror: -1;
 }

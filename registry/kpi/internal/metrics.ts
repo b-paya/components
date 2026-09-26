@@ -12,8 +12,7 @@ export type KpiMetricsInput = {
 
 export type KpiMetrics = {
   delta: number;
-  /** Relative change as a percentage point of previousValue. `null` when the
-   * ratio is undefined (no previous value, or previous is zero). */
+  /** Change in percent of `previousValue`; `null` without one or when it is zero. */
   deltaPercent: number | null;
   hasComparison: boolean;
   showTarget: boolean;
@@ -29,10 +28,7 @@ function resolveTone(delta: number, semantics: KpiSemantics): KpiTone {
   return isGood ? "positive" : "negative";
 }
 
-/**
- * Pure derivation of comparison, tone and target progress from KPI props.
- * Kept separate from the card so the arithmetic can be unit tested without a DOM.
- */
+/** Comparison, tone and target progress, derived from the props. */
 export function computeKpiMetrics({
   previousValue,
   semantics,
@@ -42,12 +38,21 @@ export function computeKpiMetrics({
   const hasComparison = previousValue != null;
   const delta = hasComparison ? value - previousValue : 0;
   const deltaPercent =
-    hasComparison && previousValue !== 0 ? (delta / Math.abs(previousValue)) * 100 : null;
+    hasComparison && previousValue !== 0
+      ? (delta / Math.abs(previousValue)) * 100
+      : null;
   const tone = resolveTone(delta, semantics);
   const showTarget = targetValue != null && targetValue !== 0;
   const targetProgress = showTarget
     ? Math.min(100, Math.max(0, (value / targetValue) * 100))
     : 0;
 
-  return { delta, deltaPercent, hasComparison, showTarget, targetProgress, tone };
+  return {
+    delta,
+    deltaPercent,
+    hasComparison,
+    showTarget,
+    targetProgress,
+    tone,
+  };
 }
